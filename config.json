@@ -1,0 +1,7 @@
+{
+	"db_file": "/path/to/db.sqlite3",
+	"port": 2345,
+	"dump_dir": "/path/to/dump_dir",
+	"max_ul_size": 1234,
+	"max_concurrent_uls": 25
+}
