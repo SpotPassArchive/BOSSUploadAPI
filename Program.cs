@@ -17,6 +17,7 @@ public static class Program {
 		WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 		
 		builder.Services
+			.AddCors(x => x.AddDefaultPolicy(y => y.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()))
 			.AddControllers()
 			.AddJsonOptions(x => {
 				x.JsonSerializerOptions.WriteIndented = false;
@@ -28,6 +29,7 @@ public static class Program {
 
 		WebApplication app = builder.Build();
 
+		app.UseCors();
 		app.MapControllers();
 
 		await app.RunAsync();
