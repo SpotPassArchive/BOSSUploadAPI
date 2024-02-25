@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using BOSSUploadAPI.Controllers;
 using System.Threading.Tasks;
 using System.Threading;
@@ -26,6 +27,9 @@ public static class Program {
 
 		builder.Host
 			.UseSerilog();
+
+		builder.WebHost
+			.UseUrls($"http://127.0.0.1:{APIConfig.HostPort}");
 
 		WebApplication app = builder.Build();
 
