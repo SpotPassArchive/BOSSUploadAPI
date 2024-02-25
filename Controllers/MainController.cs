@@ -71,14 +71,13 @@ public class MainController : ControllerBase
 
 			await using (BOSSContext ctx = BOSSContextFactory.CreateBOSSContext()) {
 				// dupe check
-				DumpType? existing = await ctx.DumpEntries
+				DumpEntry existing = await ctx.DumpEntries
 					.AsNoTracking()
 					.Where(x => x.Hash == hash)
-					.Select(x => x.Type)
 					.FirstOrDefaultAsync();
 
 				if (existing is not null)
-					return existing == type ?
+					return existing.Type == type ?
 						StatusCode(200, new UploadResponse(type, hash, UploadResponseType.AlreadyExists)) :
 						StatusCode(400, "Cannot upload the same file using different endpoints");
 
