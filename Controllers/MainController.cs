@@ -114,6 +114,20 @@ public class MainController : ControllerBase
 		}
 	}
 
+	public async Task<IActionResult> GetStatsAsync(params DumpType[] statTypes)
+	{
+		try {
+			await using BOSSContext ctx = BOSSContextFactory.CreateBOSSContext();
+			long dumpCount = await ctx.DumpEntries
+				.Where(x => statTypes.Contains(x.Type))
+				.LongCountAsync();
+			return StatusCode(200, dumpCount);
+			
+		} catch (Exception e) {
+			e.WriteToLog();
+			return StatusCode(500, "Failed processing request");
+		}
+	}
 	[HttpPost("upload/ctr/partition-a")]
 	[DisableRequestSizeLimit]
 	[DisableFormValueModelBinding]
@@ -131,4 +145,12 @@ public class MainController : ControllerBase
 	[DisableFormValueModelBinding]
 	public async Task<IActionResult> WUPUploadAsync() =>
 		await UploadAsync(DumpType.WUP, Validators.WUP);
+
+	[HttpGet("stats/ctr")]
+	public async Task<IActionResult> CTRGetStatsAsync() =>
+		await GetStatsAsync(DumpType.CTRPartitionA, DumpType.CTRPartitionB);
+
+	[HttpGet("stats/wup")]
+	public async Task<IActionResult> WUPGetStatsAsync() =>
+		await GetStatsAsync(DumpType.WUP);
 }
