@@ -29,7 +29,7 @@ public static class Program {
 			.UseSerilog();
 
 		builder.WebHost
-			.UseUrls($"http://127.0.0.1:{APIConfig.HostPort}");
+			.UseUrls($"http://0.0.0.0:{APIConfig.HostPort}");
 
 		WebApplication app = builder.Build();
 

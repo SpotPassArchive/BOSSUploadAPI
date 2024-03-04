@@ -8,6 +8,7 @@ using System.Text;
 using System.Linq;
 using System.IO;
 using System;
+using Serilog;
 
 namespace BOSSUploadAPI.Controllers;
 
@@ -61,6 +62,11 @@ public class MainController : ControllerBase
 		if (!await ProcessLock.WaitAsync(5000)) return StatusCode(503, "The server is overloaded. Please try again later.");
 	
 		try {
+			if (this.Request.ContentLength is null && this.Request.Headers.ContainsKey("X-Content-Length")) {
+				var tmpCustomContentLength = this.Request.Headers["X-Content-Length"].First();
+				if (long.TryParse(tmpCustomContentLength, out long _len))
+					this.Request.ContentLength = _len;
+			}
 			long? len = this.Request.ContentLength;
 			if (len is null || len == 0 || len > APIConfig.MaxUploadSize || (directSizeLimit != 0 && len < directSizeLimit))
 				return StatusCode(400, "Invalid dump file");
