@@ -8,7 +8,6 @@ using System.Text;
 using System.Linq;
 using System.IO;
 using System;
-using Serilog;
 
 namespace BOSSUploadAPI.Controllers;
 
@@ -23,18 +22,10 @@ file static class Validators {
 	}
 
 	public static bool WUP(Stream s) {
-		if (s.Length < 0x104) return false; // check that we have a header at least
-		s.Seek(0x4, SeekOrigin.Begin);
-		byte[] indicesTable = new byte[256];
-		s.Read(indicesTable);
-		int minSize = 0x104;
-		for (int i = 255; i >= 0; i--) { /* iterate in reverse in case the slot data is not sequential */
-			if ((indicesTable[i] & 0x80) == 0x80) { /* enabled slot */
-				minSize += (i + 1) * 0x1000;
-				break;
-			}
-		}
-		return s.Length >= minSize;
+		if (s.Length < 1048836) return false;
+		using BinaryReader br = new BinaryReader(s, Encoding.UTF8, leaveOpen: true);
+		uint magic = br.ReadUInt32();
+		return magic == 0;
 	}
 }
 
@@ -150,7 +141,7 @@ public class MainController : ControllerBase
 	[DisableRequestSizeLimit]
 	[DisableFormValueModelBinding]
 	public async Task<IActionResult> WUPUploadAsync() =>
-		await UploadAsync(DumpType.WUP, Validators.WUP);
+		await UploadAsync(DumpType.WUP, Validators.WUP, 1048836);
 
 	[HttpGet("stats/ctr")]
 	public async Task<IActionResult> CTRGetStatsAsync() =>
