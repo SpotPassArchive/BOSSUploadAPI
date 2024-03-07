@@ -53,11 +53,6 @@ public class MainController : ControllerBase
 		if (!await ProcessLock.WaitAsync(5000)) return StatusCode(503, "The server is overloaded. Please try again later.");
 	
 		try {
-			if (this.Request.ContentLength is null && this.Request.Headers.ContainsKey("X-PA-Length")) {
-				var tmpCustomContentLength = this.Request.Headers["X-PA-Length"].First();
-				if (long.TryParse(tmpCustomContentLength, out long _len))
-					this.Request.ContentLength = _len;
-			}
 			long? len = this.Request.ContentLength;
 			if (len is null || len == 0 || len > APIConfig.MaxUploadSize || (directSizeLimit != 0 && len < directSizeLimit))
 				return StatusCode(400, "Invalid dump file");
