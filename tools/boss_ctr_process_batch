@@ -45,7 +45,7 @@ for boss_id in process_data:
             break
     if not found_app:
         new_apps += 1
-        new_tasks += cur_app_tasks
+        new_tasks += len(cur_app_tasks)
         full_data.append({ "app_id": boss_id, "tasks": cur_app_tasks })
         print(f"[{boss_id}] [new app, {len(process_data[boss_id])} task(s)] {', '.join(process_data[boss_id])}")
            
