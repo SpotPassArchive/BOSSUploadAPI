@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using BOSSUploadAPI.DbModels;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using System.Threading;
 using System.Text;
 using System.Linq;
@@ -29,6 +30,17 @@ file static class Validators {
 	}
 }
 
+file static class Processors {
+	public static bool CTR(string filePath) {
+		using Process validateProc = new Process();
+		validateProc.StartInfo.FileName = APIConfig.CTRProcessor;
+		validateProc.StartInfo.ArgumentList.Add(new FileInfo(filePath).FullName);
+		validateProc.Start();
+		validateProc.WaitForExit();
+		return validateProc.ExitCode == 0;
+	}
+}
+
 [ApiController]
 [Route("/")]
 public class MainController : ControllerBase
@@ -49,7 +61,7 @@ public class MainController : ControllerBase
 		}
 	}
 
-	public async Task<IActionResult> UploadAsync(DumpType type, Func<Stream, bool> validator, int directSizeLimit = 0) {
+	private async Task<IActionResult> UploadAsync(DumpType type, Func<Stream, bool> validator, Func<string, bool> processor = null, int directSizeLimit = 0) {
 		if (!await ProcessLock.WaitAsync(5000)) return StatusCode(503, "The server is overloaded. Please try again later.");
 	
 		try {
@@ -87,8 +99,12 @@ public class MainController : ControllerBase
 				string uploadPath = Path.Join(uploadDir, $"{hash}.{dumpUpload.Extension}");
 				tmpStream.Seek(0, SeekOrigin.Begin);
 				
+				/* we'll upload, but not write to db *until* we have successfully processed the dump. */
 				await using (FileStream uploadFile = System.IO.File.OpenWrite(uploadPath))
 					await tmpStream.CopyToAsync(uploadFile);
+
+				if (processor is not null && !processor(uploadPath))
+					return StatusCode(503, "Server failed processing file");
 
 				// add the db entry
 				DumpEntry entry = new DumpEntry { Type = type, Hash = hash, UploadDate = DateTimeOffset.UtcNow.ToUnixTimeSeconds() };
@@ -124,19 +140,20 @@ public class MainController : ControllerBase
 	[DisableRequestSizeLimit]
 	[DisableFormValueModelBinding]
 	public async Task<IActionResult> CTRUploadPartitionAAsync() =>
-		await UploadAsync(DumpType.CTRPartitionA, Validators.CTR, 4153344);
+		await UploadAsync(DumpType.CTRPartitionA, Validators.CTR, Processors.CTR, 4153344);
 
-	[HttpPost("upload/ctr/partition-b")]
-	[DisableRequestSizeLimit]
-	[DisableFormValueModelBinding]
-	public async Task<IActionResult> CTRUploadPartitionBAsync() =>
-		await UploadAsync(DumpType.CTRPartitionB, Validators.CTR, 4153344);
+//	partitionB simply does not, and will never, exist.
+//	[HttpPost("upload/ctr/partition-b")]
+//	[DisableRequestSizeLimit]
+//	[DisableFormValueModelBinding]
+//	public async Task<IActionResult> CTRUploadPartitionBAsync() =>
+//		await UploadAsync(DumpType.CTRPartitionB, Validators.CTR, Processors.CTR, 4153344);
 
 	[HttpPost("upload/wup")]
 	[DisableRequestSizeLimit]
 	[DisableFormValueModelBinding]
 	public async Task<IActionResult> WUPUploadAsync() =>
-		await UploadAsync(DumpType.WUP, Validators.WUP, 1048836);
+		await UploadAsync(DumpType.WUP, Validators.WUP, directSizeLimit: 1048836);
 
 	[HttpGet("stats/ctr")]
 	public async Task<IActionResult> CTRGetStatsAsync() =>

@@ -13,6 +13,7 @@ public static class APIConfig
 	// config stuff for runtime
 	public static string DumpDirectory { get; private set; }
 	public static string SqliteDbPath { get; private set; }
+	public static string CTRProcessor { get; private set; }
 	public static long MaxUploadSize { get; private set; }
 	public static int HostPort { get; private set; }
 	public static int MaxConcurrentUploads { get; private set; }
@@ -39,12 +40,13 @@ public static class APIConfig
 
 		DumpDirectory = cfg.GetValue<string>("dump_dir");
 		SqliteDbPath = cfg.GetValue<string>("db_file");
+		CTRProcessor = cfg.GetValue<string>("ctr_processor");
 		MaxUploadSize = cfg.GetValue<long>("max_ul_size");
 		HostPort = cfg.GetValue<int>("port");
 		MaxConcurrentUploads = cfg.GetValue<int>("max_concurrent_uls");
 
-		if (string.IsNullOrWhiteSpace(DumpDirectory) || string.IsNullOrWhiteSpace(SqliteDbPath))
-			throw new ArgumentException("Dump directory or database path were not provided in configuration.");
+		if (string.IsNullOrWhiteSpace(DumpDirectory) || string.IsNullOrWhiteSpace(SqliteDbPath) || string.IsNullOrWhiteSpace(CTRProcessor))
+			throw new ArgumentException("Dump directory, database path or CTR processor executable name were not provided in configuration.");
 		else if (!File.Exists(SqliteDbPath))
 			throw new FileNotFoundException("Could not find the sqlite3 database file at the provided path in the configuration.", SqliteDbPath);
 		else if (MaxUploadSize <= 0)

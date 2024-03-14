@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+import sys, os, json
+
+if not "BOSS_ROOT" in os.environ:
+    sys.exit("please set the BOSS_ROOT environment variable")
+
+ROOT_DIR = os.path.join(os.environ["BOSS_ROOT"], "ctr_boss_tasks")
+TEMP_DIR = os.path.join(ROOT_DIR, "processed")
+FULL_JSON = os.path.join(ROOT_DIR, "ctr-boss-apps.json")
+
+tmpfiles = os.listdir(TEMP_DIR)
+if not tmpfiles:
+    print("nothing to process.")
+    sys.exit(0)
+
+new_apps = 0
+new_tasks = 0
+
+tmppaths = [ os.path.join(TEMP_DIR, tmpfile) for tmpfile in tmpfiles ]
+process_data = { }
+for i in tmppaths:
+    with open(i, "r") as tmpfile:
+        data = json.load(fp=tmpfile)
+
+    for boss_id in data:
+        if boss_id not in process_data:
+            process_data[boss_id] = data[boss_id]
+            continue
+        process_data[boss_id].extend(data[boss_id])
+
+with open(FULL_JSON, "r") as fullfile:
+    full_data = json.load(fp=fullfile)
+
+for boss_id in process_data:
+    found_app = False
+    for app in full_data:
+        if boss_id == app["app_id"]:
+            found_app = True
+            ntasks = [ task for task in process_data[boss_id] if task not in app["tasks"] ]
+            if ntasks:
+                new_tasks += len(ntasks)
+                app["tasks"].extend(ntasks)
+                print(f"[{boss_id}] [{len(ntasks)} new task(s)] {', '.join(ntasks)}")
+            break
+    if not found_app:
+        new_apps += 1
+        new_tasks += len(process_data[boss_id])
+        full_data.append({ "app_id": boss_id, "tasks": process_data[boss_id] })
+        print(f"[{boss_id}] [new app, {len(process_data[boss_id])} task(s)] {', '.join(process_data[boss_id])}")
+           
+with open(FULL_JSON, "w") as fullfile:
+    json.dump(fp=fullfile, obj=full_data, indent="\t")
+
+for tmpfile in tmppaths:
+    os.remove(tmpfile)
+
+print(f"new apps: {new_apps}")
+print(f"new tasks: {new_tasks}")

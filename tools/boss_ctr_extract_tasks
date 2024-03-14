@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+import sys, os, json, re
+
+NPDL_REGEX = re.compile(b"(?:(?:npdl|npfl)\.(?:cdn|c\.app)\.nintendowifi\.net\/p01\/)?(?:nsa|filelist)\/([A-z0-9]{16})\/(\w*)")
+
+if len(sys.argv) != 3:
+    sys.exit(1)
+
+try:
+    with open(sys.argv[1], "rb") as infile:
+        data = infile.read()
+
+    found_data = { }
+
+    all_matches = [ match for match in NPDL_REGEX.finditer(data) ] 
+    for match in all_matches:
+        b_boss_id, b_taskname = match.groups()
+        boss_id, taskname = b_boss_id.decode("utf-8"), b_taskname.decode("utf-8")
+        if boss_id in found_data:
+            if not taskname in found_data[boss_id]:
+                found_data[boss_id].append(taskname)
+            continue
+        found_data[boss_id] = [ taskname ]
+        
+    with open(sys.argv[2], "w") as json_outf:
+        json.dump(fp=json_outf, obj=found_data, indent="\t")
+except Exception as e:
+    print(e, file=sys.stderr)
+    sys.exit(1)
+
+sys.exit(0)

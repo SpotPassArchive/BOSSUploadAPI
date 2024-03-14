@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# $1: path to input partitionA
+# note: if ANY of the steps (extracting tasks, moving, **and** secure erase) fail,
+# the input file will be discarded; we don't want to keep unclean data!
+in_file="$1";
+dump_fname="$(basename "$1")";
+die() { echo "$1"; echo "failed processing $dump_fname"; rm "$in_file"; exit 1; }
+# extract the tasks
+boss_ctr_extract_tasks "$1" "${BOSS_ROOT}/ctr_boss_tasks/to_process/tmp_${dump_fname}_tasks.json" || die "could not extract tasks";
+# move the file to the "done" dir
+mv "${BOSS_ROOT}/ctr_boss_tasks/to_process/tmp_${dump_fname}_tasks.json" "${BOSS_ROOT}/ctr_boss_tasks/processed/${dump_fname}_tasks.json" || die "failed moving file";
+# everything is good; perform secure erase 
+save "$1" || die "failed performing secure erase";
+# we are good to return success
+exit 0;
