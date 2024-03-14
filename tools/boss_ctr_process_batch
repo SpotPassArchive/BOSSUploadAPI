@@ -33,10 +33,11 @@ with open(FULL_JSON, "r") as fullfile:
 
 for boss_id in process_data:
     found_app = False
+    cur_app_tasks = list(set(process_data[boss_id]))
     for app in full_data:
         if boss_id == app["app_id"]:
             found_app = True
-            ntasks = [ task for task in process_data[boss_id] if task not in app["tasks"] ]
+            ntasks = [ task for task in cur_app_tasks if task not in app["tasks"] ]
             if ntasks:
                 new_tasks += len(ntasks)
                 app["tasks"].extend(ntasks)
@@ -44,8 +45,8 @@ for boss_id in process_data:
             break
     if not found_app:
         new_apps += 1
-        new_tasks += len(process_data[boss_id])
-        full_data.append({ "app_id": boss_id, "tasks": process_data[boss_id] })
+        new_tasks += cur_app_tasks
+        full_data.append({ "app_id": boss_id, "tasks": cur_app_tasks })
         print(f"[{boss_id}] [new app, {len(process_data[boss_id])} task(s)] {', '.join(process_data[boss_id])}")
            
 with open(FULL_JSON, "w") as fullfile:
