@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys, os, json, re
 
-NPDL_REGEX = re.compile(b"(?:(?:npdl|npfl)\.(?:cdn|c\.app)\.nintendowifi\.net\/p01\/)?(?:nsa|filelist)\/([A-z0-9]{16})\/(\w*)")
+NPDL_REGEX = re.compile(b"(?:(?:npdl|npfl)\.(?:cdn|c\.app)\.nintendowifi\.net\/p01\/)?(?:nsa|filelist)\/([A-z0-9]{16})\/([\w-]*)")
 
 if len(sys.argv) != 3:
     sys.exit(1)
